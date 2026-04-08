@@ -114,7 +114,13 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
           className="absolute z-10 cursor-pointer"
           initial={fridgeState}
           animate={onFridge ? fridgeState : centerState}
-          transition={{ duration: 0.85, ease: [0.25, 0.46, 0.45, 0.94] }}
+          transition={{
+            duration: 0.85,
+            ease: [0.25, 0.46, 0.45, 0.94],
+            boxShadow: onFridge
+              ? { delay: 0.7, duration: 0.2 }  // appear only after landing
+              : { duration: 0.3 },              // disappear quickly on lift-off
+          }}
           onClick={handlePostcardClick}
         >
           <AnimatePresence>
