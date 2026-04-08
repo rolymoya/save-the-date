@@ -6,19 +6,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 type FridgeRect = { left: number; top: number; width: number; height: number };
 
-function getFridgeScale() {
-  if (typeof window === 'undefined') return 1;
-  return window.innerWidth < 640 ? 1.6 : 1;
-}
-
 function getRenderedImageRect(img: HTMLImageElement): FridgeRect {
   const { naturalWidth, naturalHeight } = img;
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const containScale = Math.min(vw / naturalWidth, vh / naturalHeight);
-  const uiScale = getFridgeScale();
-  const width = naturalWidth * containScale * uiScale;
-  const height = naturalHeight * containScale * uiScale;
+  const scale = Math.min(vw / naturalWidth, vh / naturalHeight);
+  const width = naturalWidth * scale;
+  const height = naturalHeight * scale;
   return { left: (vw - width) / 2, top: (vh - height) / 2, width, height };
 }
 
@@ -107,7 +101,7 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
         src="/fridge.png"
         alt="Fridge"
         fill
-        style={{ objectFit: 'contain', transform: `scale(${getFridgeScale()})` }}
+        style={{ objectFit: 'contain' }}
         priority
         onLoad={(e) => {
           imgRef.current = e.currentTarget;
