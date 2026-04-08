@@ -18,14 +18,16 @@ function getRenderedImageRect(img: HTMLImageElement): FridgeRect {
 
 // Fraction of fridge image where the postcard sits.
 // Tweak these to move the postcard around the fridge door.
-const FRIDGE_X_FRAC = 0.60; // ~right door of side-by-side
-const FRIDGE_Y_FRAC = 0.27; // upper portion of the door
+const FRIDGE_X_FRAC = 0.60;
+const FRIDGE_Y_FRAC = 0.27;
 
 export function PostcardFlip({ backSrc }: { backSrc: string }) {
   const [onFridge, setOnFridge] = useState(true);
   const [fridgeRect, setFridgeRect] = useState<FridgeRect | null>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
   const timersStarted = useRef(false);
+  const fridgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flipProgress = useMotionValue(0);
 
   const updateRect = useCallback(() => {
@@ -37,19 +39,20 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
     return () => window.removeEventListener('resize', updateRect);
   }, [updateRect]);
 
-  // Start timers once the fridge image is measured
   useEffect(() => {
     if (!fridgeRect || timersStarted.current) return;
     timersStarted.current = true;
 
-    const t1 = setTimeout(() => setOnFridge(false), 2800);
-    const t2 = setTimeout(() => {
+    fridgeTimerRef.current = setTimeout(() => setOnFridge(false), 2800);
+    flipTimerRef.current = setTimeout(() => {
       animate(flipProgress, 180, { duration: 1.4, ease: 'easeInOut' });
-    }, 2800 + 900 + 400);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    }, 2800 + 900 + 1800);
+    return () => {
+      if (fridgeTimerRef.current) clearTimeout(fridgeTimerRef.current);
+      if (flipTimerRef.current) clearTimeout(flipTimerRef.current);
+    };
   }, [fridgeRect, flipProgress]);
 
-  // Pixel offset from viewport center to where the postcard lives on the fridge
   const initialX = fridgeRect
     ? fridgeRect.left + fridgeRect.width * FRIDGE_X_FRAC - window.innerWidth / 2
     : 0;
@@ -57,9 +60,43 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
     ? fridgeRect.top + fridgeRect.height * FRIDGE_Y_FRAC - window.innerHeight / 2
     : 0;
 
+  const fridgeState = {
+    x: initialX, y: initialY, scale: 0.10, rotate: -7,
+    boxShadow: '6px 8px 16px rgba(0,0,0,0.45)',
+  };
+  const centerState = {
+    x: 0, y: 0, scale: 1, rotate: 0,
+    boxShadow: '0px 0px 0px rgba(0,0,0,0)',
+  };
+
+  const handlePostcardClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // User is taking control — cancel the auto-flip timer
+    if (flipTimerRef.current) { clearTimeout(flipTimerRef.current); flipTimerRef.current = null; }
+
+    if (onFridge) {
+      if (fridgeTimerRef.current) { clearTimeout(fridgeTimerRef.current); fridgeTimerRef.current = null; }
+      setOnFridge(false);
+    } else {
+      // Toggle flip
+      const target = flipProgress.get() < 90 ? 180 : 0;
+      animate(flipProgress, target, { duration: 1.4, ease: 'easeInOut' });
+    }
+  };
+
+  const handleOutsideClick = () => {
+    if (onFridge) return;
+    if (flipTimerRef.current) { clearTimeout(flipTimerRef.current); flipTimerRef.current = null; }
+    // Unflip and fly back simultaneously
+    animate(flipProgress, 0, { duration: 0.7, ease: 'easeInOut' });
+    setOnFridge(true);
+  };
+
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-yellow-400 overflow-hidden">
-      {/* Fridge — onLoad fires with the img element so we can measure it */}
+    <div
+      className="fixed inset-0 flex items-center justify-center bg-yellow-400 overflow-hidden"
+      onClick={handleOutsideClick}
+    >
       <Image
         src="/fridge.png"
         alt="Fridge"
@@ -72,15 +109,14 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
         }}
       />
 
-      {/* Only render postcard once we know where the fridge is */}
       {fridgeRect && (
         <motion.div
-          className="absolute z-10"
-          initial={{ x: initialX, y: initialY, scale: 0.10, rotate: -7 }}
-          animate={onFridge ? {} : { x: 0, y: 0, scale: 1, rotate: 0 }}
+          className="absolute z-10 cursor-pointer"
+          initial={fridgeState}
+          animate={onFridge ? fridgeState : centerState}
           transition={{ duration: 0.85, ease: [0.25, 0.46, 0.45, 0.94] }}
+          onClick={handlePostcardClick}
         >
-          {/* Magnet dot */}
           <AnimatePresence>
             {onFridge && (
               <motion.div
@@ -91,7 +127,6 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
             )}
           </AnimatePresence>
 
-          {/* Perspective wrapper */}
           <div style={{ perspective: '1200px' }} className="w-[min(88vw,672px)]">
             <motion.div
               style={{
@@ -102,7 +137,6 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
                 rotateY: flipProgress,
               }}
             >
-              {/* Front face */}
               <div className="absolute inset-0" style={{ backfaceVisibility: 'hidden' }}>
                 <Image
                   src="/1.png"
@@ -112,8 +146,6 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
                   priority
                 />
               </div>
-
-              {/* Back face */}
               <div
                 className="absolute inset-0"
                 style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
