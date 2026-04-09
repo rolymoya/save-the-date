@@ -92,6 +92,8 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
     setOnFridge(true);
   };
 
+  const SCALE = 1.5
+
   return (
     <div
       className="fixed inset-0 flex items-center justify-center bg-yellow-400 overflow-hidden"
@@ -100,7 +102,8 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
       <Image
         src="/fridge.png"
         alt="Fridge"
-        fill
+        width={1736 / SCALE}
+        height={3227 / SCALE}
         style={{ objectFit: 'contain' }}
         priority
         onLoad={(e) => {
