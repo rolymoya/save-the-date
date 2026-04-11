@@ -2,17 +2,20 @@
 
 import { AnimatePresence, animate, motion, useMotionValue } from 'framer-motion';
 import Image from 'next/image';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import {MagnetLetter} from "@/app/components/MagnetLetter";
 
 type FridgeRect = { left: number; top: number; width: number; height: number };
 
-function getRenderedImageRect(img: HTMLImageElement): FridgeRect {
-  const { naturalWidth, naturalHeight } = img;
+const FRIDGE_NATURAL_W = 1736;
+const FRIDGE_NATURAL_H = 3227;
+
+function computeFridgeRect(): FridgeRect {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const scale = Math.min(vw / naturalWidth, vh / naturalHeight);
-  const width = naturalWidth * scale;
-  const height = naturalHeight * scale;
+  const scale = Math.min(vw / FRIDGE_NATURAL_W, vh / FRIDGE_NATURAL_H);
+  const width = FRIDGE_NATURAL_W * scale;
+  const height = FRIDGE_NATURAL_H * scale;
   return { left: (vw - width) / 2, top: (vh - height) / 2, width, height };
 }
 
@@ -24,20 +27,17 @@ const FRIDGE_Y_FRAC = 0.27;
 export function PostcardFlip({ backSrc }: { backSrc: string }) {
   const [onFridge, setOnFridge] = useState(true);
   const [fridgeRect, setFridgeRect] = useState<FridgeRect | null>(null);
-  const imgRef = useRef<HTMLImageElement | null>(null);
   const timersStarted = useRef(false);
   const fridgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flipProgress = useMotionValue(0);
 
-  const updateRect = useCallback(() => {
-    if (imgRef.current) setFridgeRect(getRenderedImageRect(imgRef.current));
-  }, []);
-
   useEffect(() => {
-    window.addEventListener('resize', updateRect);
-    return () => window.removeEventListener('resize', updateRect);
-  }, [updateRect]);
+    const update = () => setFridgeRect(computeFridgeRect());
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
 
   useEffect(() => {
     if (!fridgeRect || timersStarted.current) return;
@@ -92,25 +92,42 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
     setOnFridge(true);
   };
 
-  const SCALE = 1.5
-
   return (
     <div
       className="fixed inset-0 flex items-center justify-center bg-yellow-400 overflow-hidden"
       onClick={handleOutsideClick}
     >
+
       <Image
         src="/fridge.png"
         alt="Fridge"
-        width={1736 / SCALE}
-        height={3227 / SCALE}
-        style={{ objectFit: 'contain' }}
+        width={FRIDGE_NATURAL_W}
+        height={FRIDGE_NATURAL_H}
+        style={{ objectFit: 'contain', maxWidth: '100%', maxHeight: '100vh' }}
         priority
-        onLoad={(e) => {
-          imgRef.current = e.currentTarget;
-          setFridgeRect(getRenderedImageRect(e.currentTarget));
-        }}
       />
+      
+      {fridgeRect && onFridge && (
+        <div
+          className="absolute z-[5] flex flex-col items-center"
+          style={{
+            left: fridgeRect.left + fridgeRect.width * FRIDGE_X_FRAC,
+            top: fridgeRect.top + fridgeRect.height * FRIDGE_Y_FRAC + fridgeRect.height * 0.12,
+            transform: 'translate(-50%, 0)',
+          }}
+        >
+          <div className="flex">
+            {'TAP'.split('').map((ch, i) => (
+              <MagnetLetter key={`tap-${i}`} char={ch} size={fridgeRect.width * 0.03} />
+            ))}
+          </div>
+          <div className="flex">
+            {'HERE'.split('').map((ch, i) => (
+              <MagnetLetter key={`here-${i}`} char={ch} size={fridgeRect.width * 0.03} />
+            ))}
+          </div>
+        </div>
+      )}
 
       {fridgeRect && (
         <motion.div
