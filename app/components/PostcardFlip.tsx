@@ -56,7 +56,7 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
 
     fridgeTimerRef.current = setTimeout(() => setOnFridge(false), 2800);
     flipTimerRef.current = setTimeout(() => {
-      animate(flipProgress, 180, { duration: 1.4, ease: 'easeInOut' });
+      animate(flipProgress, 180, { type: 'spring', stiffness: 80, damping: 12, mass: 0.8 });
     }, 2800 + 900 + 1800);
     return () => {
       if (fridgeTimerRef.current) clearTimeout(fridgeTimerRef.current);
@@ -91,7 +91,7 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
     } else {
       // Toggle flip
       const target = flipProgress.get() < 90 ? 180 : 0;
-      animate(flipProgress, target, { duration: 1.4, ease: 'easeInOut' });
+      animate(flipProgress, target, { type: 'spring', stiffness: 80, damping: 12, mass: 0.8 });
     }
   };
 
@@ -99,7 +99,7 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
     if (onFridge) return;
     if (flipTimerRef.current) { clearTimeout(flipTimerRef.current); flipTimerRef.current = null; }
     // Unflip and fly back simultaneously
-    animate(flipProgress, 0, { duration: 0.7, ease: 'easeInOut' });
+    animate(flipProgress, 0, { type: 'spring', stiffness: 120, damping: 18, mass: 0.8 });
     setOnFridge(true);
   };
 
@@ -171,13 +171,12 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
           className="absolute z-10 cursor-pointer"
           initial={fridgeState}
           animate={onFridge ? fridgeState : centerState}
-          transition={{
-            duration: 0.85,
-            ease: [0.25, 0.46, 0.45, 0.94],
-            boxShadow: onFridge
-              ? { delay: 0.7, duration: 0.2 }  // appear only after landing
-              : { duration: 0.3 },              // disappear quickly on lift-off
-          }}
+          transition={onFridge
+            ? { type: 'spring', stiffness: 200, damping: 22, mass: 0.8,
+                boxShadow: { delay: 0.4, duration: 0.2 } }
+            : { type: 'spring', stiffness: 120, damping: 14, mass: 0.8,
+                boxShadow: { duration: 0.2 } }
+          }
           onClick={handlePostcardClick}
         >
           <AnimatePresence>
