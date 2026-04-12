@@ -20,7 +20,7 @@ function computeFridgeRect(): FridgeRect {
 }
 
 // Fraction of fridge image where the postcard sits.
-const FRIDGE_X_FRAC = 0.70;
+const FRIDGE_X_FRAC = 0.75;
 const FRIDGE_Y_FRAC = 0.22;
 
 // Per-letter color overrides for "TAP HERE"
@@ -72,7 +72,7 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
     : 0;
 
   const fridgeState = {
-    x: initialX, y: initialY, scale: 0.15, rotate: -7,
+    x: initialX, y: initialY, scale: 0.22, rotate: -7,
     boxShadow: '6px 8px 16px rgba(0,0,0,0.45)',
   };
   const centerState = {
