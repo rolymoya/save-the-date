@@ -21,8 +21,8 @@ function computeFridgeRect(): FridgeRect {
 
 // Fraction of fridge image where the postcard sits.
 // Tweak these to move the postcard around the fridge door.
-const FRIDGE_X_FRAC = 0.60;
-const FRIDGE_Y_FRAC = 0.27;
+const FRIDGE_X_FRAC = 0.70;
+const FRIDGE_Y_FRAC = 0.22;
 
 export function PostcardFlip({ backSrc }: { backSrc: string }) {
   const [onFridge, setOnFridge] = useState(true);
@@ -61,7 +61,7 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
     : 0;
 
   const fridgeState = {
-    x: initialX, y: initialY, scale: 0.10, rotate: -7,
+    x: initialX, y: initialY, scale: 0.15, rotate: -7,
     boxShadow: '6px 8px 16px rgba(0,0,0,0.45)',
   };
   const centerState = {
@@ -112,18 +112,18 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
           className="absolute z-[5] flex flex-col items-center"
           style={{
             left: fridgeRect.left + fridgeRect.width * FRIDGE_X_FRAC,
-            top: fridgeRect.top + fridgeRect.height * FRIDGE_Y_FRAC + fridgeRect.height * 0.12,
-            transform: 'translate(-50%, 0)',
+            top: fridgeRect.top + fridgeRect.height * FRIDGE_Y_FRAC - fridgeRect.height * 0.04,
+            transform: 'translate(-50%, -100%)',
           }}
         >
           <div className="flex">
             {'TAP'.split('').map((ch, i) => (
-              <MagnetLetter key={`tap-${i}`} char={ch} size={fridgeRect.width * 0.03} />
+              <MagnetLetter key={`tap-${i}`} char={ch} size={fridgeRect.width * 0.05} />
             ))}
           </div>
           <div className="flex">
             {'HERE'.split('').map((ch, i) => (
-              <MagnetLetter key={`here-${i}`} char={ch} size={fridgeRect.width * 0.03} />
+              <MagnetLetter key={`here-${i}`} char={ch} size={fridgeRect.width * 0.05} />
             ))}
           </div>
         </div>
