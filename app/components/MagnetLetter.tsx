@@ -4,27 +4,20 @@ import { CSSProperties } from 'react';
 
 // Color mapping matching the reference fridge magnet alphabet image
 const LETTER_COLORS: Record<string, string> = {
-  A: '#f5c518', B: '#2a3fb5', C: '#2db643', D: '#e8272a', E: '#29c4dc',
-  F: '#d42a8a', G: '#2a3fb5', H: '#29c4dc', I: '#e8272a', J: '#d42a8a',
-  K: '#29c4dc', L: '#2a3fb5', M: '#d42a8a', N: '#f5c518', O: '#2a3fb5',
-  P: '#2db643', Q: '#f5c518', R: '#d42a8a', S: '#2a3fb5', T: '#2db643',
-  U: '#e8272a', V: '#29c4dc', W: '#e8272a', X: '#f5c518', Y: '#2db643',
-  Z: '#d42a8a', '!': '#2db643', '?': '#2a3fb5',
+  A: '#ffcf00', B: '#3355ff', C: '#00d44a', D: '#00ddf0', E: '#00ddf0',
+  F: '#ff2da0', G: '#3355ff', H: '#ff2030', I: '#ff2030', J: '#ff2da0',
+  K: '#00ddf0', L: '#3355ff', M: '#ff2da0', N: '#ffcf00', O: '#3355ff',
+  P: '#3355ff', Q: '#ffcf00', R: '#ff2da0', S: '#3355ff', T: '#00d44a',
+  U: '#ff2030', V: '#00ddf0', W: '#ff2030', X: '#ffcf00', Y: '#00d44a',
+  Z: '#ff2da0', '!': '#00d44a', '?': '#3355ff',
 };
 
-const FALLBACK_COLORS = ['#e8272a', '#2a3fb5', '#2db643', '#f5c518', '#29c4dc', '#d42a8a'];
+const FALLBACK_COLORS = ['#ff2030', '#3355ff', '#00d44a', '#ffcf00', '#00ddf0', '#ff2da0'];
 
 function darken(hex: string, amount: number): string {
   const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - amount);
   const g = Math.max(0, parseInt(hex.slice(3, 5), 16) - amount);
   const b = Math.max(0, parseInt(hex.slice(5, 7), 16) - amount);
-  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
-function lighten(hex: string, amount: number): string {
-  const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + amount);
-  const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + amount);
-  const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + amount);
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
@@ -51,11 +44,20 @@ export function MagnetLetter({
 }) {
   const letter = char.toUpperCase();
   const baseColor = color || getLetterColor(letter);
-  const lightColor = lighten(baseColor, 50);
-  const darkColor = darken(baseColor, 50);
-  const depthPx = Math.max(2, size * 0.04);
-  const shadowBlur = size * 0.06;
-  const strokeWidth = Math.max(0.5, size * 0.015);
+  const edgeColor = darken(baseColor, 55);
+  const depthPx = Math.max(1, size * 0.04);
+  const steps = Math.max(3, Math.round(depthPx / 0.5));
+
+  // Build layered text-shadow for thick 3D extrusion (down and slightly right)
+  const extrusion: string[] = [];
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    const x = depthPx * 0.3 * t;
+    const y = depthPx * t;
+    extrusion.push(`${x}px ${y}px 0 ${edgeColor}`);
+  }
+  // Soft drop shadow behind everything
+  extrusion.push(`${depthPx * 0.5}px ${depthPx * 2}px ${depthPx * 2}px rgba(0,0,0,0.25)`);
 
   return (
     <span
@@ -67,15 +69,9 @@ export function MagnetLetter({
         fontSize: size,
         fontWeight: 700,
         lineHeight: 1,
-        // Gradient from light (top) to dark (bottom) for plastic body
-        background: `linear-gradient(175deg, ${lightColor} 0%, ${baseColor} 40%, ${darkColor} 100%)`,
-        backgroundClip: 'text',
-        WebkitBackgroundClip: 'text',
-        color: 'transparent',
-        // Lighter stroke creates the plastic edge shine
-        WebkitTextStroke: `${strokeWidth}px ${lighten(baseColor, 30)}`,
+        color: baseColor,
         transform: rotation ? `rotate(${rotation}deg)` : undefined,
-        filter: `drop-shadow(0 ${depthPx}px 0 ${darken(baseColor, 70)}) drop-shadow(0 ${depthPx * 2}px ${shadowBlur}px rgba(0,0,0,0.3))`,
+        textShadow: extrusion.join(', '),
         fontFamily: 'var(--font-fredoka), system-ui, sans-serif',
         WebkitFontSmoothing: 'antialiased',
         userSelect: 'none',
@@ -83,23 +79,6 @@ export function MagnetLetter({
       }}
     >
       {letter}
-      {/* Specular highlight — concentrated white gloss on top-left */}
-      <span
-        aria-hidden
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.15) 30%, transparent 50%)`,
-          backgroundClip: 'text',
-          WebkitBackgroundClip: 'text',
-          color: 'transparent',
-          WebkitTextStroke: `${strokeWidth}px transparent`,
-          filter: 'none',
-          pointerEvents: 'none',
-        }}
-      >
-        {letter}
-      </span>
     </span>
   );
 }
