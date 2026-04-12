@@ -109,6 +109,13 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
       onClick={handleOutsideClick}
     >
 
+      {/* Dim overlay */}
+      <motion.div
+        className="absolute inset-0 bg-black z-[8] pointer-events-none"
+        animate={{ opacity: onFridge ? 0 : 0.5 }}
+        transition={{ duration: 0.4 }}
+      />
+
       <Image
         src="/fridge.png"
         alt="Fridge"
