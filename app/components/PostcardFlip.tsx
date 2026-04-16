@@ -1,8 +1,8 @@
 'use client';
 
-import { AnimatePresence, animate, motion, useMotionValue } from 'framer-motion';
+import { AnimatePresence, animate, motion, useMotionValue, useTransform } from 'framer-motion';
 import Image from 'next/image';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFridge } from './FridgeScene';
 
 export function PostcardFlip({
@@ -20,9 +20,13 @@ export function PostcardFlip({
   fridgeScale?: number;
   rotation?: number;
 }) {
-  const { fridgeRect, activeId, select, dismiss } = useFridge();
+  const { fridgeRect, activeId, select, dismiss, tiltX, tiltY } = useFridge();
   const isActive = activeId === id;
   const canInteract = activeId === null;
+
+  const jiggleScale = useMemo(() => 0.6 + (position.x + position.y) * 0.5, [position.x, position.y]);
+  const jiggleX = useTransform(tiltX, (v) => isActive ? 0 : v * jiggleScale);
+  const jiggleY = useTransform(tiltY, (v) => isActive ? 0 : v * jiggleScale * 0.5);
 
   const timersStarted = useRef(false);
   const fridgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -94,7 +98,7 @@ export function PostcardFlip({
   return (
     <motion.div
       className="absolute cursor-pointer"
-      style={{ zIndex: isActive ? 20 : 5 }}
+      style={{ zIndex: isActive ? 20 : 5, translateX: jiggleX, translateY: jiggleY }}
       initial={fridgeState}
       animate={isActive ? centerState : fridgeState}
       transition={

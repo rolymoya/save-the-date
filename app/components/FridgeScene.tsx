@@ -2,7 +2,8 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
-import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback, type ReactNode } from 'react';
+import { useMotionValue, useSpring, type MotionValue } from 'framer-motion';
 import { MagnetLetter } from './MagnetLetter';
 
 export type FridgeRect = { left: number; top: number; width: number; height: number };
@@ -10,10 +11,13 @@ export type FridgeRect = { left: number; top: number; width: number; height: num
 const FRIDGE_NATURAL_W = 1736;
 const FRIDGE_NATURAL_H = 3227;
 
+// Inset so the fridge doesn't fill the entire viewport on mobile
+const FRIDGE_PADDING = 0.92; // use 92% of available space
+
 function computeFridgeRect(): FridgeRect {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  const scale = Math.min(vw / FRIDGE_NATURAL_W, vh / FRIDGE_NATURAL_H);
+  const scale = Math.min(vw / FRIDGE_NATURAL_W, vh / FRIDGE_NATURAL_H) * FRIDGE_PADDING;
   const width = FRIDGE_NATURAL_W * scale;
   const height = FRIDGE_NATURAL_H * scale;
   return { left: (vw - width) / 2, top: (vh - height) / 2, width, height };
@@ -39,6 +43,8 @@ type FridgeContextValue = {
   activeId: string | null;
   select: (id: string) => void;
   dismiss: () => void;
+  tiltX: MotionValue<number>;
+  tiltY: MotionValue<number>;
 };
 
 const FridgeContext = createContext<FridgeContextValue | null>(null);
@@ -59,6 +65,43 @@ export function FridgeScene({ children }: { children: ReactNode }) {
     window.addEventListener('resize', update);
     return () => window.removeEventListener('resize', update);
   }, []);
+
+  // Device tilt → jiggle
+  const rawTiltX = useMotionValue(0);
+  const rawTiltY = useMotionValue(0);
+  const tiltX = useSpring(rawTiltX, { stiffness: 60, damping: 12 });
+  const tiltY = useSpring(rawTiltY, { stiffness: 60, damping: 12 });
+  const permissionAsked = useRef(false);
+
+  useEffect(() => {
+    const handleMotion = (e: DeviceOrientationEvent) => {
+      const x = Math.max(-15, Math.min(15, (e.gamma ?? 0) * 0.4));
+      const y = Math.max(-15, Math.min(15, (e.beta ?? 0) * 0.3));
+      rawTiltX.set(x);
+      rawTiltY.set(y);
+    };
+
+    const requestPermission = async () => {
+      if (permissionAsked.current) return;
+      permissionAsked.current = true;
+      // iOS 13+ requires permission
+      const DOE = DeviceOrientationEvent as unknown as {
+        requestPermission?: () => Promise<string>;
+      };
+      if (DOE.requestPermission) {
+        try {
+          const perm = await DOE.requestPermission();
+          if (perm !== 'granted') return;
+        } catch {
+          return;
+        }
+      }
+      window.addEventListener('deviceorientation', handleMotion);
+    };
+
+    requestPermission();
+    return () => window.removeEventListener('deviceorientation', handleMotion);
+  }, [rawTiltX, rawTiltY]);
 
   const select = useCallback((id: string) => {
     setActiveId(id);
@@ -89,7 +132,11 @@ export function FridgeScene({ children }: { children: ReactNode }) {
         alt="Fridge"
         width={FRIDGE_NATURAL_W}
         height={FRIDGE_NATURAL_H}
-        style={{ objectFit: 'contain', maxWidth: '100%', maxHeight: '100vh' }}
+        style={{
+          objectFit: 'contain',
+          maxWidth: `${FRIDGE_PADDING * 100}%`,
+          maxHeight: `${FRIDGE_PADDING * 100}vh`,
+        }}
         priority
       />
 
@@ -144,7 +191,7 @@ export function FridgeScene({ children }: { children: ReactNode }) {
 
       {/* Fridge items (postcards, photos) */}
       {fridgeRect && (
-        <FridgeContext.Provider value={{ fridgeRect, activeId, select, dismiss }}>
+        <FridgeContext.Provider value={{ fridgeRect, activeId, select, dismiss, tiltX, tiltY }}>
           {children}
         </FridgeContext.Provider>
       )}

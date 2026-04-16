@@ -1,7 +1,8 @@
 'use client';
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useTransform } from 'framer-motion';
 import Image from 'next/image';
+import { useMemo } from 'react';
 import { useFridge } from './FridgeScene';
 
 export function FridgePhoto({
@@ -21,9 +22,14 @@ export function FridgePhoto({
   rotation?: number;
   aspectRatio?: string;
 }) {
-  const { fridgeRect, activeId, select, dismiss } = useFridge();
+  const { fridgeRect, activeId, select, dismiss, tiltX, tiltY } = useFridge();
   const isActive = activeId === id;
   const canInteract = activeId === null;
+
+  // Each photo jiggles slightly differently based on its position
+  const jiggleScale = useMemo(() => 0.6 + (position.x + position.y) * 0.5, [position.x, position.y]);
+  const jiggleX = useTransform(tiltX, (v) => isActive ? 0 : v * jiggleScale);
+  const jiggleY = useTransform(tiltY, (v) => isActive ? 0 : v * jiggleScale * 0.5);
 
   const initialX =
     fridgeRect.left + fridgeRect.width * position.x - window.innerWidth / 2;
@@ -57,7 +63,7 @@ export function FridgePhoto({
   return (
     <motion.div
       className="absolute cursor-pointer"
-      style={{ zIndex: isActive ? 20 : 5 }}
+      style={{ zIndex: isActive ? 20 : 5, translateX: jiggleX, translateY: jiggleY }}
       initial={fridgeState}
       animate={isActive ? centerState : fridgeState}
       transition={
