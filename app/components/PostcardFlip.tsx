@@ -28,9 +28,9 @@ export function PostcardFlip({
   const jiggleX = useTransform(tiltX, (v) => isActive ? 0 : v * jiggleScale);
   const jiggleY = useTransform(tiltY, (v) => isActive ? 0 : v * jiggleScale * 0.5);
 
-  // Size the container to the fridge, not the viewport
-  const onFridgeWidth = fridgeRect.width * relativeSize;
-  const activeScale = Math.min(fridgeRect.width * 0.85, 672) / onFridgeWidth;
+  // Compute scale so the postcard is always `relativeSize` fraction of fridge width
+  const containerWidth = Math.min(window.innerWidth * 0.88, 672);
+  const computedScale = (fridgeRect.width * relativeSize) / containerWidth;
 
   const timersStarted = useRef(false);
   const fridgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -59,14 +59,14 @@ export function PostcardFlip({
   const fridgeState = {
     x: initialX,
     y: initialY,
-    scale: 1,
+    scale: computedScale,
     rotate: rotation,
     boxShadow: '6px 8px 16px rgba(0,0,0,0.45)',
   };
   const centerState = {
     x: 0,
     y: 0,
-    scale: activeScale,
+    scale: 1,
     rotate: 0,
     boxShadow: '0px 0px 0px rgba(0,0,0,0)',
   };
@@ -136,7 +136,7 @@ export function PostcardFlip({
         )}
       </AnimatePresence>
 
-      <div style={{ perspective: '1200px', width: onFridgeWidth }}>
+      <div style={{ perspective: '1200px' }} className="w-[min(88vw,672px)]">
         <motion.div
           style={{
             transformStyle: 'preserve-3d',

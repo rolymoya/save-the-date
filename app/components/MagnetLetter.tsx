@@ -4,15 +4,15 @@ import { CSSProperties } from 'react';
 
 // Color mapping matching the reference fridge magnet alphabet image
 const LETTER_COLORS: Record<string, string> = {
-  A: '#ffcf00', B: '#3355ff', C: '#00a83e', D: '#00ddf0', E: '#00ddf0',
+  A: '#ffcf00', B: '#3355ff', C: '#00d44a', D: '#00ddf0', E: '#00ddf0',
   F: '#ff2da0', G: '#3355ff', H: '#ff2030', I: '#ff2030', J: '#ff2da0',
   K: '#00ddf0', L: '#3355ff', M: '#ff2da0', N: '#ffcf00', O: '#3355ff',
-  P: '#3355ff', Q: '#ffcf00', R: '#ff2da0', S: '#3355ff', T: '#00a83e',
-  U: '#ff2030', V: '#00ddf0', W: '#ff2030', X: '#ffcf00', Y: '#00a83e',
-  Z: '#ff2da0', '!': '#00a83e', '?': '#3355ff',
+  P: '#3355ff', Q: '#ffcf00', R: '#ff2da0', S: '#3355ff', T: '#00d44a',
+  U: '#ff2030', V: '#00ddf0', W: '#ff2030', X: '#ffcf00', Y: '#00d44a',
+  Z: '#ff2da0', '!': '#00d44a', '?': '#3355ff',
 };
 
-const FALLBACK_COLORS = ['#ff2030', '#3355ff', '#00a83e', '#ffcf00', '#00ddf0', '#ff2da0'];
+const FALLBACK_COLORS = ['#ff2030', '#3355ff', '#00d44a', '#ffcf00', '#00ddf0', '#ff2da0'];
 
 function darken(hex: string, amount: number): string {
   const r = Math.max(0, parseInt(hex.slice(1, 3), 16) - amount);
