@@ -25,8 +25,8 @@ function computeFridgeRect(): FridgeRect {
 
 // Per-letter color overrides for "TAP HERE"
 const TAP_HERE_COLORS: Record<string, string[]> = {
-  TAP: ['#ff2030', '#ffcf00', '#00d44a'],
-  HERE: ['#3355ff', '#ff2da0', '#ff2030', '#3355ff'],
+  TAP: ['#ffcf00', '#ff2030', '#00a83e'],
+  HERE: ['#3355ff', '#ffcf00', '#ff2030', '#3355ff'],
 };
 
 function seededRand(seed: number): number {
@@ -153,8 +153,8 @@ export function FridgeScene({ children }: { children: ReactNode }) {
           <div className="flex items-center">
             {'TAP'.split('').map((ch, i) => {
               const seed = i * 7 + 42;
-              const rot = (seededRand(seed) - 0.5) * 16;
-              const yOff = (seededRand(seed + 1) - 0.5) * 0.3;
+              const rot = (seededRand(seed * 2.9) - 0.5) * 16;
+              const yOff = (seededRand(seed * 200) - 0.5) * 0.3;
               const sz = fridgeRect.width * 0.05;
               return (
                 <MagnetLetter
