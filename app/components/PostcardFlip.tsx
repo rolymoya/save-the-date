@@ -2,7 +2,7 @@
 
 import { AnimatePresence, animate, motion, useMotionValue, useTransform } from 'framer-motion';
 import Image from 'next/image';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useFridge } from './FridgeScene';
 
 export function PostcardFlip({
@@ -24,9 +24,9 @@ export function PostcardFlip({
   const isActive = activeId === id;
   const canInteract = activeId === null;
 
-  const jiggleScale = useMemo(() => 0.6 + (position.x + position.y) * 0.5, [position.x, position.y]);
-  const jiggleX = useTransform(tiltX, (v) => isActive ? v * jiggleScale : 0);
-  const jiggleY = useTransform(tiltY, (v) => isActive ? v * jiggleScale * 0.5 : 0);
+  // 3D tilt — rotate the postcard as if it's a card in your hand
+  const tiltRotateY = useTransform(tiltX, (v) => isActive ? v * 1.2 : 0);
+  const tiltRotateX = useTransform(tiltY, (v) => isActive ? v * -0.8 : 0);
 
   // Compute scale so the postcard is always `relativeSize` fraction of fridge width
   const containerWidth = Math.min(window.innerWidth * 0.88, 672);
@@ -102,7 +102,12 @@ export function PostcardFlip({
   return (
     <motion.div
       className="absolute cursor-pointer"
-      style={{ zIndex: isActive ? 20 : 5, translateX: jiggleX, translateY: jiggleY }}
+      style={{
+        zIndex: isActive ? 20 : 5,
+        perspective: 800,
+        rotateX: tiltRotateX,
+        rotateY: tiltRotateY,
+      }}
       initial={fridgeState}
       animate={isActive ? centerState : fridgeState}
       transition={
