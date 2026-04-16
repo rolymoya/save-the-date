@@ -10,14 +10,14 @@ export function PostcardFlip({
   src,
   backSrc,
   position,
-  fridgeScale = 0.22,
+  relativeSize = 0.25,
   rotation = -5,
 }: {
   id: string;
   src: string;
   backSrc: string;
   position: { x: number; y: number };
-  fridgeScale?: number;
+  relativeSize?: number;
   rotation?: number;
 }) {
   const { fridgeRect, activeId, select, dismiss, tiltX, tiltY } = useFridge();
@@ -27,6 +27,10 @@ export function PostcardFlip({
   const jiggleScale = useMemo(() => 0.6 + (position.x + position.y) * 0.5, [position.x, position.y]);
   const jiggleX = useTransform(tiltX, (v) => isActive ? 0 : v * jiggleScale);
   const jiggleY = useTransform(tiltY, (v) => isActive ? 0 : v * jiggleScale * 0.5);
+
+  // Compute scale so the postcard is always `relativeSize` fraction of fridge width
+  const containerWidth = Math.min(window.innerWidth * 0.88, 672);
+  const computedScale = (fridgeRect.width * relativeSize) / containerWidth;
 
   const timersStarted = useRef(false);
   const fridgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -55,7 +59,7 @@ export function PostcardFlip({
   const fridgeState = {
     x: initialX,
     y: initialY,
-    scale: fridgeScale,
+    scale: computedScale,
     rotate: rotation,
     boxShadow: '6px 8px 16px rgba(0,0,0,0.45)',
   };

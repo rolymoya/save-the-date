@@ -10,7 +10,7 @@ export function FridgePhoto({
   src,
   alt = '',
   position,
-  fridgeScale = 0.15,
+  relativeSize = 0.2,
   rotation = -5,
   aspectRatio = '4 / 3',
 }: {
@@ -18,7 +18,7 @@ export function FridgePhoto({
   src: string;
   alt?: string;
   position: { x: number; y: number };
-  fridgeScale?: number;
+  relativeSize?: number;
   rotation?: number;
   aspectRatio?: string;
 }) {
@@ -31,6 +31,10 @@ export function FridgePhoto({
   const jiggleX = useTransform(tiltX, (v) => isActive ? 0 : v * jiggleScale);
   const jiggleY = useTransform(tiltY, (v) => isActive ? 0 : v * jiggleScale * 0.5);
 
+  // Compute scale so the photo is always `relativeSize` fraction of fridge width
+  const containerWidth = Math.min(window.innerWidth * 0.88, 672);
+  const computedScale = (fridgeRect.width * relativeSize) / containerWidth;
+
   const initialX =
     fridgeRect.left + fridgeRect.width * position.x - window.innerWidth / 2;
   const initialY =
@@ -39,7 +43,7 @@ export function FridgePhoto({
   const fridgeState = {
     x: initialX,
     y: initialY,
-    scale: fridgeScale,
+    scale: computedScale,
     rotate: rotation,
     boxShadow: '6px 8px 16px rgba(0,0,0,0.45)',
   };
