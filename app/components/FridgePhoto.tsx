@@ -26,11 +26,6 @@ export function FridgePhoto({
   const isActive = activeId === id;
   const canInteract = activeId === null;
 
-  // Each photo jiggles slightly differently based on its position
-  const jiggleScale = useMemo(() => 0.6 + (position.x + position.y) * 0.5, [position.x, position.y]);
-  const jiggleX = useTransform(tiltX, (v) => isActive ? 0 : v * jiggleScale);
-  const jiggleY = useTransform(tiltY, (v) => isActive ? 0 : v * jiggleScale * 0.5);
-
   // Compute scale so the photo is always `relativeSize` fraction of fridge width
   const containerWidth = Math.min(window.innerWidth * 0.88, 672);
   const computedScale = (fridgeRect.width * relativeSize) / containerWidth;
@@ -67,7 +62,7 @@ export function FridgePhoto({
   return (
     <motion.div
       className="absolute cursor-pointer"
-      style={{ zIndex: isActive ? 20 : 5, translateX: jiggleX, translateY: jiggleY }}
+      style={{ zIndex: isActive ? 20 : 5 }}
       initial={fridgeState}
       animate={isActive ? centerState : fridgeState}
       transition={
