@@ -73,9 +73,16 @@ export function FridgeScene({ children }: { children: ReactNode }) {
   const tiltY = useSpring(rawTiltY, { stiffness: 60, damping: 12 });
   const motionListening = useRef(false);
 
+  const baseBeta = useRef<number | null>(null);
+
   const handleMotion = useCallback((e: DeviceOrientationEvent) => {
-    const x = Math.max(-15, Math.min(15, (e.gamma ?? 0) * 0.4));
-    const y = Math.max(-15, Math.min(15, (e.beta ?? 0) * 0.3));
+    const gamma = e.gamma ?? 0;
+    const beta = e.beta ?? 0;
+    // Calibrate: treat the first reading as "neutral"
+    if (baseBeta.current === null) baseBeta.current = beta;
+    const deltaB = beta - baseBeta.current;
+    const x = Math.max(-20, Math.min(20, gamma * 0.6));
+    const y = Math.max(-20, Math.min(20, deltaB * 0.6));
     rawTiltX.set(x);
     rawTiltY.set(y);
   }, [rawTiltX, rawTiltY]);
