@@ -28,8 +28,8 @@ export function FridgePhoto({
 
   // Each photo jiggles slightly differently based on its position
   const jiggleScale = useMemo(() => 0.6 + (position.x + position.y) * 0.5, [position.x, position.y]);
-  const jiggleX = useTransform(tiltX, (v) => isActive ? v * jiggleScale : 0);
-  const jiggleY = useTransform(tiltY, (v) => isActive ? v * jiggleScale * 0.5 : 0);
+  const jiggleX = useTransform(tiltX, (v) => isActive ? 0 : v * jiggleScale);
+  const jiggleY = useTransform(tiltY, (v) => isActive ? 0 : v * jiggleScale * 0.5);
 
   // Compute scale so the photo is always `relativeSize` fraction of fridge width
   const containerWidth = Math.min(window.innerWidth * 0.88, 672);
