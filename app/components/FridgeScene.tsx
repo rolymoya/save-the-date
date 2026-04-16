@@ -25,7 +25,7 @@ function computeFridgeRect(): FridgeRect {
 
 // Per-letter color overrides for "TAP HERE"
 const TAP_HERE_COLORS: Record<string, string[]> = {
-  TAP: ['#ff2030', '#ffcf00', '#00d44a'],
+  TAP: ['#ff2030', '#ffcf00', '#00a83e'],
   HERE: ['#3355ff', '#ff2da0', '#ff2030', '#3355ff'],
 };
 
