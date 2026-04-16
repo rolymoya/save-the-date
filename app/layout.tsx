@@ -24,13 +24,13 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Maria + Roly",
     description: "We're getting married!",
-    images: [{ url: "/2-en.jpeg" }],
+    images: [{ url: "/1.png" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Maria + Roly",
     description: "We're getting married!",
-    images: ["/2-en.jpeg"],
+    images: ["/1.png"],
   },
 };
 
