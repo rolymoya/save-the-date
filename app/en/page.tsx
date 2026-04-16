@@ -9,7 +9,7 @@ export default function EnglishPage() {
         id="postcard"
         src="/1.png"
         backSrc="/2-en.jpeg"
-        position={{ x: 0.25, y: 0.18 }}
+        position={{ x: 0.25, y: 0.20 }}
       />
       <FridgePhoto
         id="chicago"

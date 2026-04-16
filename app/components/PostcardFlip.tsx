@@ -29,23 +29,35 @@ export function PostcardFlip({
   const computedScale = (fridgeRect.width * relativeSize) / containerWidth;
 
   const timersStarted = useRef(false);
-  const fridgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const returnTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flipProgress = useMotionValue(0);
 
+  // Start open (off fridge) → flip after delay → return to fridge after another delay
   useEffect(() => {
     if (timersStarted.current) return;
     timersStarted.current = true;
 
-    fridgeTimerRef.current = setTimeout(() => select(id), 2800);
+    // Open immediately
+    select(id);
+
+    // Flip to back after 2s
     flipTimerRef.current = setTimeout(() => {
       animate(flipProgress, 180, { type: 'spring', stiffness: 80, damping: 12, mass: 0.8 });
-    }, 2800 + 900 + 1800);
+    }, 4000);
+
+    // Return to fridge after 5.5s
+    returnTimerRef.current = setTimeout(() => {
+      animate(flipProgress, 0, { type: 'spring', stiffness: 120, damping: 18, mass: 0.8 });
+      setTimeout(() => dismiss(), 800);
+    }, 8500);
+
     return () => {
-      if (fridgeTimerRef.current) clearTimeout(fridgeTimerRef.current);
+      timersStarted.current = false;
       if (flipTimerRef.current) clearTimeout(flipTimerRef.current);
+      if (returnTimerRef.current) clearTimeout(returnTimerRef.current);
     };
-  }, [flipProgress, id, select]);
+  }, [flipProgress, id, select, dismiss]);
 
   const initialX =
     fridgeRect.left + fridgeRect.width * position.x - window.innerWidth / 2;
@@ -69,16 +81,11 @@ export function PostcardFlip({
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (flipTimerRef.current) {
-      clearTimeout(flipTimerRef.current);
-      flipTimerRef.current = null;
-    }
+    // Cancel any pending auto-timers on user interaction
+    if (flipTimerRef.current) { clearTimeout(flipTimerRef.current); flipTimerRef.current = null; }
+    if (returnTimerRef.current) { clearTimeout(returnTimerRef.current); returnTimerRef.current = null; }
 
     if (!isActive && canInteract) {
-      if (fridgeTimerRef.current) {
-        clearTimeout(fridgeTimerRef.current);
-        fridgeTimerRef.current = null;
-      }
       select(id);
     } else if (isActive) {
       const target = flipProgress.get() < 90 ? 180 : 0;

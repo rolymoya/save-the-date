@@ -23,11 +23,12 @@ function computeFridgeRect(): FridgeRect {
   return { left: (vw - width) / 2, top: (vh - height) / 2, width, height };
 }
 
-// Per-letter color overrides for "TAP HERE"
-const TAP_HERE_COLORS: Record<string, string[]> = {
-  TAP: ['#ffcf00', '#ff2030', '#00a83e'],
-  HERE: ['#3355ff', '#ffcf00', '#ff2030', '#3355ff'],
-};
+// Per-letter color overrides for "WE'RE GETTING MARRIED"
+const MAGNET_LINES: { text: string; colors: string[] }[] = [
+  { text: "WE'RE",   colors: ['#ff2030', '#3355ff', '#ffcf00', '#00a83e', '#ff2da0'] },
+  { text: 'GETTING', colors: ['#ffcf00', '#3355ff', '#ff2030', '#00a83e', '#ff2da0', '#3355ff', '#ffcf00'] },
+  { text: 'MARRIED!', colors: ['#00a83e', '#ff2030', '#3355ff', '#ffcf00', '#ff2da0', '#00a83e', '#3355ff'] },
+];
 
 function seededRand(seed: number): number {
   const x = Math.sin(seed * 9301 + 49297) * 233280;
@@ -36,7 +37,7 @@ function seededRand(seed: number): number {
 
 // Fridge X/Y for the "TAP HERE" magnets (above the postcard)
 const MAGNETS_X_FRAC = 0.25;
-const MAGNETS_Y_FRAC = 0.15;
+const MAGNETS_Y_FRAC = 0.10;
 
 type FridgeContextValue = {
   fridgeRect: FridgeRect;
@@ -140,52 +141,36 @@ export function FridgeScene({ children }: { children: ReactNode }) {
         priority
       />
 
-      {/* TAP HERE magnet letters */}
+      {/* WE'RE GETTING MARRIED magnet letters */}
       {fridgeRect && (
         <div
           className="absolute z-[5] flex flex-col items-center"
           style={{
             left: fridgeRect.left + fridgeRect.width * MAGNETS_X_FRAC,
-            top: fridgeRect.top + fridgeRect.height * MAGNETS_Y_FRAC - fridgeRect.height * 0.04,
-            transform: 'translate(-50%, -100%)',
+            top: fridgeRect.top + fridgeRect.height * MAGNETS_Y_FRAC,
+            transform: 'translate(-50%, -50%)',
           }}
         >
-          <div className="flex items-center">
-            {'TAP'.split('').map((ch, i) => {
-              const seed = i * 7 + 42;
-              const rot = (seededRand(seed * 2.9) - 0.5) * 16;
-              const yOff = (seededRand(seed * 200) - 0.5) * 0.3;
-              const sz = fridgeRect.width * 0.05;
-              return (
-                <MagnetLetter
-                  key={`tap-${i}`}
-                  char={ch}
-                  color={TAP_HERE_COLORS.TAP[i]}
-                  size={sz}
-                  rotation={rot}
-                  style={{ marginTop: sz * yOff }}
-                />
-              );
-            })}
-          </div>
-          <div className="flex items-center">
-            {'HERE'.split('').map((ch, i) => {
-              const seed = (i + 3) * 7 + 99;
-              const rot = (seededRand(seed) - 0.5) * 16;
-              const yOff = (seededRand(seed + 1) - 0.5) * 0.3;
-              const sz = fridgeRect.width * 0.05;
-              return (
-                <MagnetLetter
-                  key={`here-${i}`}
-                  char={ch}
-                  color={TAP_HERE_COLORS.HERE[i]}
-                  size={sz}
-                  rotation={rot}
-                  style={{ marginTop: sz * yOff }}
-                />
-              );
-            })}
-          </div>
+          {MAGNET_LINES.map((line, li) => (
+            <div key={li} className="flex items-center">
+              {line.text.split('').map((ch, ci) => {
+                const seed = (li * 20 + ci) * 7 + 42;
+                const rot = (seededRand(seed * 2.9) - 0.5) * 16;
+                const yOff = (seededRand(seed * 200) - 0.5) * 0.3;
+                const sz = fridgeRect.width * 0.04;
+                return (
+                  <MagnetLetter
+                    key={`${li}-${ci}`}
+                    char={ch}
+                    color={line.colors[ci % line.colors.length]}
+                    size={sz}
+                    rotation={rot}
+                    style={{ marginTop: sz * yOff }}
+                  />
+                );
+              })}
+            </div>
+          ))}
         </div>
       )}
 
