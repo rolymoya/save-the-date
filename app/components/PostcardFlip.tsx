@@ -25,8 +25,8 @@ export function PostcardFlip({
   const canInteract = activeId === null;
 
   // 3D tilt — rotate the postcard as if it's a card in your hand
-  const tiltRotateY = useTransform(tiltX, (v) => isActive ? v * 2 : 0);
-  const tiltRotateX = useTransform(tiltY, (v) => isActive ? v * -2 : 0);
+  const tiltRotateY = useTransform(tiltX, (v) => isActive ? v * 1.2 : 0);
+  const tiltRotateX = useTransform(tiltY, (v) => isActive ? v * -0.8 : 0);
 
   // Compute scale so the postcard is always `relativeSize` fraction of fridge width
   const containerWidth = Math.min(window.innerWidth * 0.88, 672);
