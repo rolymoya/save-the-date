@@ -2,59 +2,38 @@
 
 import { AnimatePresence, animate, motion, useMotionValue } from 'framer-motion';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
-import {MagnetLetter} from "@/app/components/MagnetLetter";
+import { useEffect, useRef } from 'react';
+import { useFridge } from './FridgeScene';
 
-type FridgeRect = { left: number; top: number; width: number; height: number };
+export function PostcardFlip({
+  id,
+  src,
+  backSrc,
+  position,
+  fridgeScale = 0.22,
+  rotation = -5,
+}: {
+  id: string;
+  src: string;
+  backSrc: string;
+  position: { x: number; y: number };
+  fridgeScale?: number;
+  rotation?: number;
+}) {
+  const { fridgeRect, activeId, select, dismiss } = useFridge();
+  const isActive = activeId === id;
+  const canInteract = activeId === null;
 
-const FRIDGE_NATURAL_W = 1736;
-const FRIDGE_NATURAL_H = 3227;
-
-function computeFridgeRect(): FridgeRect {
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-  const scale = Math.min(vw / FRIDGE_NATURAL_W, vh / FRIDGE_NATURAL_H);
-  const width = FRIDGE_NATURAL_W * scale;
-  const height = FRIDGE_NATURAL_H * scale;
-  return { left: (vw - width) / 2, top: (vh - height) / 2, width, height };
-}
-
-// Fraction of fridge image where the postcard sits.
-const FRIDGE_X_FRAC = 0.75;
-const FRIDGE_Y_FRAC = 0.22;
-
-// Per-letter color overrides for "TAP HERE"
-const TAP_HERE_COLORS: Record<string, string[]> = {
-  TAP: ['#ff2030', '#ffcf00', '#00d44a'],
-  HERE: ['#3355ff', '#ff2da0', '#ff2030', '#3355ff'],
-};
-
-// Deterministic pseudo-random from seed
-function seededRand(seed: number): number {
-  const x = Math.sin(seed * 9301 + 49297) * 233280;
-  return x - Math.floor(x);
-}
-
-export function PostcardFlip({ backSrc }: { backSrc: string }) {
-  const [onFridge, setOnFridge] = useState(true);
-  const [fridgeRect, setFridgeRect] = useState<FridgeRect | null>(null);
   const timersStarted = useRef(false);
   const fridgeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flipTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flipProgress = useMotionValue(0);
 
   useEffect(() => {
-    const update = () => setFridgeRect(computeFridgeRect());
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
-  }, []);
-
-  useEffect(() => {
-    if (!fridgeRect || timersStarted.current) return;
+    if (timersStarted.current) return;
     timersStarted.current = true;
 
-    fridgeTimerRef.current = setTimeout(() => setOnFridge(false), 2800);
+    fridgeTimerRef.current = setTimeout(() => select(id), 2800);
     flipTimerRef.current = setTimeout(() => {
       animate(flipProgress, 180, { type: 'spring', stiffness: 80, damping: 12, mass: 0.8 });
     }, 2800 + 900 + 1800);
@@ -62,174 +41,131 @@ export function PostcardFlip({ backSrc }: { backSrc: string }) {
       if (fridgeTimerRef.current) clearTimeout(fridgeTimerRef.current);
       if (flipTimerRef.current) clearTimeout(flipTimerRef.current);
     };
-  }, [fridgeRect, flipProgress]);
+  }, [flipProgress, id, select]);
 
-  const initialX = fridgeRect
-    ? fridgeRect.left + fridgeRect.width * FRIDGE_X_FRAC - window.innerWidth / 2
-    : 0;
-  const initialY = fridgeRect
-    ? fridgeRect.top + fridgeRect.height * FRIDGE_Y_FRAC - window.innerHeight / 2
-    : 0;
+  const initialX =
+    fridgeRect.left + fridgeRect.width * position.x - window.innerWidth / 2;
+  const initialY =
+    fridgeRect.top + fridgeRect.height * position.y - window.innerHeight / 2;
 
   const fridgeState = {
-    x: initialX, y: initialY, scale: 0.22, rotate: -7,
+    x: initialX,
+    y: initialY,
+    scale: fridgeScale,
+    rotate: rotation,
     boxShadow: '6px 8px 16px rgba(0,0,0,0.45)',
   };
   const centerState = {
-    x: 0, y: 0, scale: 1, rotate: 0,
+    x: 0,
+    y: 0,
+    scale: 1,
+    rotate: 0,
     boxShadow: '0px 0px 0px rgba(0,0,0,0)',
   };
 
-  const handlePostcardClick = (e: React.MouseEvent) => {
+  const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // User is taking control — cancel the auto-flip timer
-    if (flipTimerRef.current) { clearTimeout(flipTimerRef.current); flipTimerRef.current = null; }
+    if (flipTimerRef.current) {
+      clearTimeout(flipTimerRef.current);
+      flipTimerRef.current = null;
+    }
 
-    if (onFridge) {
-      if (fridgeTimerRef.current) { clearTimeout(fridgeTimerRef.current); fridgeTimerRef.current = null; }
-      setOnFridge(false);
-    } else {
-      // Toggle flip
+    if (!isActive && canInteract) {
+      if (fridgeTimerRef.current) {
+        clearTimeout(fridgeTimerRef.current);
+        fridgeTimerRef.current = null;
+      }
+      select(id);
+    } else if (isActive) {
       const target = flipProgress.get() < 90 ? 180 : 0;
       animate(flipProgress, target, { type: 'spring', stiffness: 80, damping: 12, mass: 0.8 });
     }
   };
 
-  const handleOutsideClick = () => {
-    if (onFridge) return;
-    if (flipTimerRef.current) { clearTimeout(flipTimerRef.current); flipTimerRef.current = null; }
-    // Unflip and fly back simultaneously
-    animate(flipProgress, 0, { type: 'spring', stiffness: 120, damping: 18, mass: 0.8 });
-    setOnFridge(true);
-  };
+  // When dismissed externally (outside click), unflip
+  const prevActive = useRef(isActive);
+  useEffect(() => {
+    if (prevActive.current && !isActive) {
+      animate(flipProgress, 0, { type: 'spring', stiffness: 120, damping: 18, mass: 0.8 });
+    }
+    prevActive.current = isActive;
+  }, [isActive, flipProgress]);
 
   return (
-    <div
-      className="fixed inset-0 flex items-center justify-center bg-yellow-400 overflow-hidden"
-      onClick={handleOutsideClick}
+    <motion.div
+      className="absolute cursor-pointer"
+      style={{ zIndex: isActive ? 20 : 5 }}
+      initial={fridgeState}
+      animate={isActive ? centerState : fridgeState}
+      transition={
+        !isActive
+          ? {
+              type: 'spring',
+              stiffness: 200,
+              damping: 22,
+              mass: 0.8,
+              boxShadow: { delay: 0.4, duration: 0.2 },
+            }
+          : {
+              type: 'spring',
+              stiffness: 120,
+              damping: 14,
+              mass: 0.8,
+              boxShadow: { duration: 0.2 },
+            }
+      }
+      onClick={handleClick}
     >
+      <AnimatePresence>
+        {!isActive && (
+          <motion.div
+            className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-20 w-5 h-5 rounded-full shadow-md"
+            style={{
+              background: 'radial-gradient(circle at 35% 35%, #e45, #a00)',
+            }}
+            exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.3 } }}
+          />
+        )}
+      </AnimatePresence>
 
-      {/* Dim overlay */}
-      <motion.div
-        className="absolute inset-0 bg-black z-[8] pointer-events-none"
-        animate={{ opacity: onFridge ? 0 : 0.5 }}
-        transition={{ duration: 0.4 }}
-      />
-
-      <Image
-        src="/fridge.png"
-        alt="Fridge"
-        width={FRIDGE_NATURAL_W}
-        height={FRIDGE_NATURAL_H}
-        style={{ objectFit: 'contain', maxWidth: '100%', maxHeight: '100vh' }}
-        priority
-      />
-      
-      {fridgeRect && (
-        <div
-          className="absolute z-[5] flex flex-col items-center"
+      <div style={{ perspective: '1200px' }} className="w-[min(88vw,672px)]">
+        <motion.div
           style={{
-            left: fridgeRect.left + fridgeRect.width * FRIDGE_X_FRAC,
-            top: fridgeRect.top + fridgeRect.height * FRIDGE_Y_FRAC - fridgeRect.height * 0.04,
-            transform: 'translate(-50%, -100%)',
+            transformStyle: 'preserve-3d',
+            position: 'relative',
+            aspectRatio: '2.8 / 2',
+            width: '100%',
+            rotateY: flipProgress,
           }}
         >
-          <div className="flex items-center">
-            {'TAP'.split('').map((ch, i) => {
-              const seed = i * 7 + 42;
-              const rot = (seededRand(seed) - 0.5) * 16;
-              const yOff = (seededRand(seed + 1) - 0.5) * 0.3;
-              const sz = fridgeRect.width * 0.05;
-              return (
-                <MagnetLetter
-                  key={`tap-${i}`}
-                  char={ch}
-                  color={TAP_HERE_COLORS.TAP[i]}
-                  size={sz}
-                  rotation={rot}
-                  style={{ marginTop: sz * yOff }}
-                />
-              );
-            })}
+          <div
+            className="absolute inset-0"
+            style={{ backfaceVisibility: 'hidden' }}
+          >
+            <Image
+              src={src}
+              alt="Postcard front"
+              fill
+              style={{ objectFit: 'cover' }}
+              priority
+            />
           </div>
-          <div className="flex items-center">
-            {'HERE'.split('').map((ch, i) => {
-              const seed = (i + 3) * 7 + 99;
-              const rot = (seededRand(seed) - 0.5) * 16;
-              const yOff = (seededRand(seed + 1) - 0.5) * 0.3;
-              const sz = fridgeRect.width * 0.05;
-              return (
-                <MagnetLetter
-                  key={`here-${i}`}
-                  char={ch}
-                  color={TAP_HERE_COLORS.HERE[i]}
-                  size={sz}
-                  rotation={rot}
-                  style={{ marginTop: sz * yOff }}
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {fridgeRect && (
-        <motion.div
-          className="absolute z-10 cursor-pointer"
-          initial={fridgeState}
-          animate={onFridge ? fridgeState : centerState}
-          transition={onFridge
-            ? { type: 'spring', stiffness: 200, damping: 22, mass: 0.8,
-                boxShadow: { delay: 0.4, duration: 0.2 } }
-            : { type: 'spring', stiffness: 120, damping: 14, mass: 0.8,
-                boxShadow: { duration: 0.2 } }
-          }
-          onClick={handlePostcardClick}
-        >
-          <AnimatePresence>
-            {onFridge && (
-              <motion.div
-                className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-20 w-5 h-5 rounded-full shadow-md"
-                style={{ background: 'radial-gradient(circle at 35% 35%, #e45, #a00)' }}
-                exit={{ opacity: 0, scale: 0.5, transition: { duration: 0.3 } }}
-              />
-            )}
-          </AnimatePresence>
-
-          <div style={{ perspective: '1200px' }} className="w-[min(88vw,672px)]">
-            <motion.div
-              style={{
-                transformStyle: 'preserve-3d',
-                position: 'relative',
-                aspectRatio: '2.8 / 2',
-                width: '100%',
-                rotateY: flipProgress,
-              }}
-            >
-              <div className="absolute inset-0" style={{ backfaceVisibility: 'hidden' }}>
-                <Image
-                  src="/1.png"
-                  alt="Save the Date — Maria and Roly"
-                  fill
-                  style={{ objectFit: 'cover' }}
-                  priority
-                />
-              </div>
-              <div
-                className="absolute inset-0"
-                style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-              >
-                <Image
-                  src={backSrc}
-                  alt="Postcard back"
-                  fill
-                  style={{ objectFit: 'cover' }}
-                />
-              </div>
-            </motion.div>
+          <div
+            className="absolute inset-0"
+            style={{
+              backfaceVisibility: 'hidden',
+              transform: 'rotateY(180deg)',
+            }}
+          >
+            <Image
+              src={backSrc}
+              alt="Postcard back"
+              fill
+              style={{ objectFit: 'cover' }}
+            />
           </div>
         </motion.div>
-      )}
-    </div>
+      </div>
+    </motion.div>
   );
 }
