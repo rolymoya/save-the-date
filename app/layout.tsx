@@ -19,6 +19,7 @@ const fredokaFont = Fredoka({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_URL || "https://save-the-date-pied.vercel.app"),
   title: "Maria + Roly",
   description: "We're getting married!",
   openGraph: {
