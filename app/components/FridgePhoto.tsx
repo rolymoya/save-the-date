@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion, useTransform } from 'framer-motion';
 import Image from 'next/image';
+import { useMemo } from 'react';
 import { useFridge } from './FridgeScene';
 
 export function FridgePhoto({
@@ -25,9 +26,10 @@ export function FridgePhoto({
   const isActive = activeId === id;
   const canInteract = activeId === null;
 
-  // 3D tilt — rotate the photo as if it's a card in your hand
-  const rotateY = useTransform(tiltX, (v) => isActive ? v * 1.2 : 0);
-  const rotateX = useTransform(tiltY, (v) => isActive ? v * -0.8 : 0);
+  // Each photo jiggles slightly differently based on its position
+  const jiggleScale = useMemo(() => 0.6 + (position.x + position.y) * 0.5, [position.x, position.y]);
+  const jiggleX = useTransform(tiltX, (v) => isActive ? v * jiggleScale : 0);
+  const jiggleY = useTransform(tiltY, (v) => isActive ? v * jiggleScale * 0.5 : 0);
 
   // Compute scale so the photo is always `relativeSize` fraction of fridge width
   const containerWidth = Math.min(window.innerWidth * 0.88, 672);
@@ -65,12 +67,7 @@ export function FridgePhoto({
   return (
     <motion.div
       className="absolute cursor-pointer"
-      style={{
-        zIndex: isActive ? 20 : 5,
-        perspective: 800,
-        rotateX,
-        rotateY,
-      }}
+      style={{ zIndex: isActive ? 20 : 5, translateX: jiggleX, translateY: jiggleY }}
       initial={fridgeState}
       animate={isActive ? centerState : fridgeState}
       transition={
