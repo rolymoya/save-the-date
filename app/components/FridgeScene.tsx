@@ -71,47 +71,57 @@ export function FridgeScene({ children }: { children: ReactNode }) {
   const rawTiltY = useMotionValue(0);
   const tiltX = useSpring(rawTiltX, { stiffness: 60, damping: 12 });
   const tiltY = useSpring(rawTiltY, { stiffness: 60, damping: 12 });
-  const permissionAsked = useRef(false);
+  const motionListening = useRef(false);
 
-  useEffect(() => {
-    const handleMotion = (e: DeviceOrientationEvent) => {
-      const x = Math.max(-15, Math.min(15, (e.gamma ?? 0) * 0.4));
-      const y = Math.max(-15, Math.min(15, (e.beta ?? 0) * 0.3));
-      rawTiltX.set(x);
-      rawTiltY.set(y);
-    };
-
-    const requestPermission = async () => {
-      if (permissionAsked.current) return;
-      permissionAsked.current = true;
-      // iOS 13+ requires permission
-      const DOE = DeviceOrientationEvent as unknown as {
-        requestPermission?: () => Promise<string>;
-      };
-      if (DOE.requestPermission) {
-        try {
-          const perm = await DOE.requestPermission();
-          if (perm !== 'granted') return;
-        } catch {
-          return;
-        }
-      }
-      window.addEventListener('deviceorientation', handleMotion);
-    };
-
-    requestPermission();
-    return () => window.removeEventListener('deviceorientation', handleMotion);
+  const handleMotion = useCallback((e: DeviceOrientationEvent) => {
+    const x = Math.max(-15, Math.min(15, (e.gamma ?? 0) * 0.4));
+    const y = Math.max(-15, Math.min(15, (e.beta ?? 0) * 0.3));
+    rawTiltX.set(x);
+    rawTiltY.set(y);
   }, [rawTiltX, rawTiltY]);
 
+  // Start listening immediately on non-iOS (no permission needed)
+  useEffect(() => {
+    const DOE = DeviceOrientationEvent as unknown as {
+      requestPermission?: () => Promise<string>;
+    };
+    if (!DOE.requestPermission && !motionListening.current) {
+      motionListening.current = true;
+      window.addEventListener('deviceorientation', handleMotion);
+    }
+    return () => window.removeEventListener('deviceorientation', handleMotion);
+  }, [handleMotion]);
+
+  // iOS: request permission on first user tap (must be from a gesture)
+  const requestMotionPermission = useCallback(async () => {
+    if (motionListening.current) return;
+    const DOE = DeviceOrientationEvent as unknown as {
+      requestPermission?: () => Promise<string>;
+    };
+    if (!DOE.requestPermission) return;
+    try {
+      const perm = await DOE.requestPermission();
+      if (perm === 'granted') {
+        motionListening.current = true;
+        window.addEventListener('deviceorientation', handleMotion);
+      }
+    } catch {
+      // permission denied or unavailable
+    }
+  }, [handleMotion]);
+
   const select = useCallback((id: string) => {
+    requestMotionPermission();
     setActiveId(id);
-  }, []);
+  }, [requestMotionPermission]);
 
   const dismiss = useCallback(() => {
     setActiveId(null);
   }, []);
 
   const handleOutsideClick = () => {
+    // Request motion permission on first interaction (iOS requires user gesture)
+    requestMotionPermission();
     if (activeId) dismiss();
   };
 
