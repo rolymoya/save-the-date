@@ -7,7 +7,7 @@ export default function EnglishPage() {
     <FridgeScene>
       <PostcardFlip
         id="postcard"
-        src="/1.png"
+        src="/1.jpg"
         backSrc="/2-en.jpeg"
         position={{ x: 0.25, y: 0.20 }}
       />
