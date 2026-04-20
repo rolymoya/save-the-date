@@ -42,11 +42,17 @@ export function PostcardEnvelope({
   // Derived: flap shadow on body
   const flapShadowOpacity = useTransform(flapRotation, [180, 90, 0], [0, 0.15, 0.3]);
 
-  // Derived: postcard z-index
-  const postcardZ = useTransform(postcardRotation, (r) => (r < 70 ? 15 : 1));
+  // Derived: postcard z-index (inside envelope stacking context)
+  // Starts at 2 (above cream interior z-1, below body flaps z-3/4)
+  // Goes to 20 once it starts emerging
+  const postcardZ = useTransform(postcardRotation, (r) => (r < 80 ? 20 : 2));
 
-  // Derived: hide preview when real postcard emerges
-  const previewOpacity = useTransform(postcardRotation, [90, 70], [1, 0]);
+  // Derived: top flap z-index — drops below postcard once open
+  const topFlapZ = useTransform(flapRotation, (r) => (r < 90 ? 2 : 7));
+
+  // Compensate postcard Y so it stays centered on screen while envelope slides down
+  const postcardCompensateY = useTransform(envelopeY, (y) => -y);
+
 
   useEffect(() => {
     setMounted(true);
@@ -139,6 +145,7 @@ export function PostcardEnvelope({
             aspectRatio: `${ENVELOPE_ASPECT}`,
             boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
             borderRadius: '3px',
+            overflow: 'visible',
           }}
         >
           {/* Layer 1: Cream interior */}
@@ -232,14 +239,71 @@ export function PostcardEnvelope({
             }}
           />
 
+          {/* Layer 6b: Postcard — inside envelope stacking context */}
+          <motion.div
+            className="absolute cursor-pointer"
+            style={{
+              left: '50%',
+              top: '50%',
+              width: '65%',
+              translateX: '-50%',
+              translateY: '-50%',
+              y: postcardCompensateY,
+              rotate: postcardRotation,
+              scale: postcardScale,
+              zIndex: postcardZ,
+            }}
+            onClick={handleClick}
+          >
+            <div style={{ perspective: '1200px' }}>
+              <motion.div
+                style={{
+                  transformStyle: 'preserve-3d',
+                  position: 'relative',
+                  aspectRatio: `${POSTCARD_ASPECT_W} / ${POSTCARD_ASPECT_H}`,
+                  width: '100%',
+                  rotateY: flipProgress,
+                }}
+              >
+                <div
+                  className="absolute inset-0 rounded-sm overflow-hidden"
+                  style={{ backfaceVisibility: 'hidden' }}
+                >
+                  <Image
+                    src={frontSrc}
+                    alt="Postcard front"
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    priority
+                  />
+                </div>
+                <div
+                  className="absolute inset-0 rounded-sm overflow-hidden"
+                  style={{
+                    backfaceVisibility: 'hidden',
+                    transform: 'rotateY(180deg)',
+                  }}
+                >
+                  <Image
+                    src={backSrc}
+                    alt="Postcard back"
+                    fill
+                    style={{ objectFit: 'cover' }}
+                    priority
+                  />
+                </div>
+              </motion.div>
+            </div>
+          </motion.div>
+
           {/* Layer 7: Top flap — preserve-3d so both faces work with one rotation */}
-          <div
+          <motion.div
             className="absolute left-0 right-0"
             style={{
               bottom: '100%',
               paddingBottom: `${flapHeightPct}%`,
               perspective: '800px',
-              zIndex: 7,
+              zIndex: topFlapZ,
             }}
           >
             <motion.div
@@ -252,58 +316,6 @@ export function PostcardEnvelope({
                 boxShadow: '0 6px 14px rgba(0,0,0,0.3)',
               }}
             />
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Postcard — starts horizontal (rotate 90), animates to vertical (rotate 0) */}
-      <motion.div
-        className="absolute cursor-pointer"
-        style={{
-          width: 'min(57vw, 437px)',
-          rotate: postcardRotation,
-          scale: postcardScale,
-          zIndex: postcardZ,
-        }}
-        onClick={handleClick}
-      >
-        <div style={{ perspective: '1200px' }}>
-          <motion.div
-            style={{
-              transformStyle: 'preserve-3d',
-              position: 'relative',
-              aspectRatio: `${POSTCARD_ASPECT_W} / ${POSTCARD_ASPECT_H}`,
-              width: '100%',
-              rotateY: flipProgress,
-            }}
-          >
-            <div
-              className="absolute inset-0 rounded-sm overflow-hidden"
-              style={{ backfaceVisibility: 'hidden' }}
-            >
-              <Image
-                src={frontSrc}
-                alt="Postcard front"
-                fill
-                style={{ objectFit: 'cover' }}
-                priority
-              />
-            </div>
-            <div
-              className="absolute inset-0 rounded-sm overflow-hidden"
-              style={{
-                backfaceVisibility: 'hidden',
-                transform: 'rotateY(180deg)',
-              }}
-            >
-              <Image
-                src={backSrc}
-                alt="Postcard back"
-                fill
-                style={{ objectFit: 'cover' }}
-                priority
-              />
-            </div>
           </motion.div>
         </div>
       </motion.div>
