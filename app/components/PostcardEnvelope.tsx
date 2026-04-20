@@ -42,13 +42,12 @@ export function PostcardEnvelope({
   // Derived: flap shadow on body
   const flapShadowOpacity = useTransform(flapRotation, [180, 90, 0], [0, 0.15, 0.3]);
 
-  // Derived: postcard z-index (inside envelope stacking context)
-  // Starts at 2 (above cream interior z-1, below body flaps z-3/4)
-  // Goes to 20 once it starts emerging
-  const postcardZ = useTransform(postcardRotation, (r) => (r < 80 ? 20 : 2));
+  // Postcard z-index: always 2 (above cream z-1, below body flaps z-3/4)
+  const postcardZ = 2;
 
-  // Derived: top flap z-index — drops below postcard once open
-  const topFlapZ = useTransform(flapRotation, (r) => (r < 90 ? 2 : 7));
+  // Top flap z-index: starts at 7 (above everything), drops to 1 once open
+  // so postcard (z-2) renders above it after it opens
+  const topFlapZ = useTransform(flapRotation, (r) => (r < 90 ? 1 : 7));
 
   // Compensate postcard Y so it stays centered on screen while envelope slides down
   const postcardCompensateY = useTransform(envelopeY, (y) => -y);
@@ -227,15 +226,15 @@ export function PostcardEnvelope({
             }} />
           </div>
 
-          {/* Layer 6: Flap shadow on body — V-shaped from top */}
+          {/* Layer 1b: Flap shadow on cream interior — V-shaped from top */}
           <motion.div
             className="absolute inset-0"
             style={{
               opacity: flapShadowOpacity,
-              background: 'linear-gradient(180deg, rgba(0,0,0,0.5), transparent 50%)',
+              background: 'linear-gradient(180deg, rgba(0,0,0,0.4), transparent 40%)',
               clipPath: 'polygon(0% 0%, 50% 45%, 100% 0%)',
               pointerEvents: 'none',
-              zIndex: 5,
+              zIndex: 1,
             }}
           />
 
@@ -245,7 +244,7 @@ export function PostcardEnvelope({
             style={{
               left: '50%',
               top: '50%',
-              width: '65%',
+              width: '70%',
               translateX: '-50%',
               translateY: '-50%',
               y: postcardCompensateY,
