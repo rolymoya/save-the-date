@@ -84,7 +84,7 @@ export function PostcardEnvelope({
       animate(postcardScale, 1, {
         type: 'spring', stiffness: 50, damping: 14, mass: 0.8,
       });
-      animate(envelopeY, vh * 0.75, {
+      animate(envelopeY, vh * 0.70, {
         type: 'spring', stiffness: 40, damping: 16, mass: 1,
       });
     }, 2000);
