@@ -91,7 +91,7 @@ export function PostcardEnvelope({
       animate(postcardScale, 1.4, {
         type: 'spring', stiffness: 50, damping: 14, mass: 0.8,
       });
-    }, 3200);
+    }, 2250);
 
     // T=5500: Postcard flips to back
     schedule(() => {
