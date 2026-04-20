@@ -36,7 +36,7 @@ export function PostcardEnvelope({
 
   // Postcard
   const postcardRotation = useMotionValue(90);
-  const postcardScale = useMotionValue(0.65);
+  const postcardScale = useMotionValue(0.75);
   const flipProgress = useMotionValue(0);
 
   // Derived: flap shadow on body
