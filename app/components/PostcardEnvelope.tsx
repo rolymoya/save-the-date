@@ -76,12 +76,9 @@ export function PostcardEnvelope({
       });
     }, 1000);
 
-    // T=2000: Postcard rotates out + envelope slides down
+    // T=2000: Envelope slides down + postcard rotates
     schedule(() => {
       animate(postcardRotation, 0, {
-        type: 'spring', stiffness: 50, damping: 14, mass: 0.8,
-      });
-      animate(postcardScale, 1, {
         type: 'spring', stiffness: 50, damping: 14, mass: 0.8,
       });
       animate(envelopeY, vh * 0.70, {
@@ -89,17 +86,24 @@ export function PostcardEnvelope({
       });
     }, 2000);
 
-    // T=4500: Postcard flips to back
+    // T=3200: Postcard scales up after clearing the envelope
+    schedule(() => {
+      animate(postcardScale, 1.4, {
+        type: 'spring', stiffness: 50, damping: 14, mass: 0.8,
+      });
+    }, 3200);
+
+    // T=5500: Postcard flips to back
     schedule(() => {
       animate(flipProgress, 180, {
         type: 'spring', stiffness: 80, damping: 12, mass: 0.8,
       });
-    }, 4500);
+    }, 5500);
 
-    // T=5800: Enable interactive flip
+    // T=6800: Enable interactive flip
     schedule(() => {
       setAutoComplete(true);
-    }, 5800);
+    }, 6800);
 
     return () => {
       timersStarted.current = false;
