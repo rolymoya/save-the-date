@@ -98,7 +98,7 @@ export function PostcardEnvelope({
       animate(flipProgress, 180, {
         type: 'spring', stiffness: 80, damping: 12, mass: 0.8,
       });
-    }, 5500);
+    }, 4500);
 
     // T=6800: Enable interactive flip
     schedule(() => {
